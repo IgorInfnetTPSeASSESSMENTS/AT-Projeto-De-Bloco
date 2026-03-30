@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <title>Detalhes da solicitação</title>
+</head>
+<body>
+<div class="page-header">
+    <h1 id="page-title">Detalhes da solicitação</h1>
+</div>
+
+<div class="page-content">
+    <p><strong>ID:</strong> <span id="request-id" th:text="${request.id()}"></span></p>
+    <p><strong>Pet ID:</strong> <span id="request-petId" th:text="${request.petId()}"></span></p>
+    <p><strong>Abrigo ID:</strong> <span id="request-shelterId" th:text="${request.shelterId()}"></span></p>
+    <p><strong>Solicitante:</strong> <span id="request-applicantName" th:text="${request.applicantName().value()}"></span></p>
+    <p><strong>Email:</strong> <span id="request-applicantEmail" th:text="${request.applicantEmail().value()}"></span></p>
+    <p><strong>Telefone:</strong> <span id="request-applicantPhone" th:text="${request.applicantPhone().value()}"></span></p>
+    <p><strong>Documento:</strong> <span id="request-applicantDocument" th:text="${request.applicantDocument().value()}"></span></p>
+    <p><strong>Moradia:</strong>
+        <span id="request-housingType" th:switch="${request.housingType().name()}">
+            <span th:case="'HOUSE'">CASA</span>
+            <span th:case="'APARTMENT'">APARTAMENTO</span>
+            <span th:case="'FARM'">SÍTIO / CHÁCARA</span>
+            <span th:case="'OTHER'">OUTRO</span>
+            <span th:case="*">DESCONHECIDO</span>
+        </span>
+    </p>
+    <p><strong>Possui outros pets:</strong> <span id="request-hasOtherPets" th:text="${request.hasOtherPets() ? 'Sim' : 'Não'}"></span></p>
+    <p><strong>Motivo:</strong> <span id="request-reason" th:text="${request.reason().value()}"></span></p>
+    <p><strong>Status:</strong>
+        <span id="request-status" th:switch="${request.status().name()}">
+            <span th:case="'PENDING'">PENDENTE</span>
+            <span th:case="'UNDER_REVIEW'">EM ANÁLISE</span>
+            <span th:case="'APPROVED'">APROVADA</span>
+            <span th:case="'REJECTED'">REJEITADA</span>
+            <span th:case="'CANCELLED'">CANCELADA</span>
+        </span>
+    </p>
+
+    <p><strong>Análise:</strong>
+        <span id="request-analysis" th:switch="${request.eligibilityAnalysis().name()}">
+            <span th:case="'ELIGIBLE'">ELEGÍVEL</span>
+            <span th:case="'NOT_ELIGIBLE'">NÃO ELEGÍVEL</span>
+            <span th:case="'REQUIRES_MANUAL_REVIEW'">REQUER ANÁLISE MANUAL</span>
+            <span th:case="'UNAVAILABLE'">INDISPONÍVEL</span>
+            <span th:case="'NOT_REQUESTED'">NÃO SOLICITADA</span>
+        </span>
+    </p>
+    <p><strong>Criada em:</strong> <span id="request-createdAt" th:text="${request.createdAt()}"></span></p>
+    <p><strong>Atualizada em:</strong> <span id="request-updatedAt" th:text="${request.updatedAt()}"></span></p>
+
+    <form th:action="@{/adoption-requests/{id}/retry-analysis(id=${request.id()})}" method="post">
+        <button id="retry-analysis" type="submit">Executar nova análise</button>
+    </form>
+
+    <a id="link-back-to-list"
+       th:href="@{/pets/{petId}/adoption-requests(petId=${request.petId()})}">
+        Voltar
+    </a>
+</div>
+</body>
+</html>

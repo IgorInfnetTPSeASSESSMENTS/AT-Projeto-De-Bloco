@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <title>Nova solicitação</title>
+</head>
+<body>
+<div class="page-header form-page-header">
+    <h1 id="page-title">Nova solicitação de adoção</h1>
+
+    <div th:if="${contextLocked}">
+        <p>
+            Contexto atual:
+            <span th:text="'Pet ID: ' + ${contextPetId}"></span>
+            <span> | </span>
+            <span th:text="'Abrigo ID: ' + ${contextShelterId}"></span>
+        </p>
+    </div>
+</div>
+
+<div class="page-content form-page-content">
+    <div th:replace="~{fragments/messages :: messages}"></div>
+
+    <form id="adoption-request-form" th:action="@{/adoption-requests}" th:object="${adoptionRequestForm}" method="post" novalidate>
+
+        <div th:if="${!contextLocked}">
+            <label>Pet ID</label>
+            <input id="petId" type="number" th:field="*{petId}">
+            <span th:errors="*{petId}"></span>
+        </div>
+        <div th:if="${contextLocked}">
+            <label>Pet ID</label>
+            <span id="petId-display" th:text="${contextPetId}"></span>
+            <input id="petId" type="hidden" th:field="*{petId}">
+            <span th:errors="*{petId}"></span>
+        </div>
+
+        <div th:if="${!contextLocked}">
+            <label>Abrigo ID</label>
+            <input id="shelterId" type="number" th:field="*{shelterId}">
+            <span th:errors="*{shelterId}"></span>
+        </div>
+        <div th:if="${contextLocked}">
+            <label>Abrigo ID</label>
+            <span id="shelterId-display" th:text="${contextShelterId}"></span>
+            <input id="shelterId" type="hidden" th:field="*{shelterId}">
+            <span th:errors="*{shelterId}"></span>
+        </div>
+
+        <div>
+            <label>Nome</label>
+            <input id="applicantName" type="text" th:field="*{applicantName}">
+            <span th:errors="*{applicantName}"></span>
+        </div>
+
+        <div>
+            <label>Email</label>
+            <input id="applicantEmail" type="email" th:field="*{applicantEmail}">
+            <span th:errors="*{applicantEmail}"></span>
+        </div>
+
+        <div>
+            <label>Telefone</label>
+            <input id="applicantPhone" type="text" th:field="*{applicantPhone}">
+            <span th:errors="*{applicantPhone}"></span>
+        </div>
+
+        <div>
+            <label>Documento</label>
+            <input id="applicantDocument" type="text" th:field="*{applicantDocument}">
+            <span th:errors="*{applicantDocument}"></span>
+        </div>
+
+        <div>
+            <label>Moradia</label>
+            <select id="housingType" th:field="*{housingType}">
+                <option value="">Selecione</option>
+                <option value="HOUSE">Casa</option>
+                <option value="APARTMENT">Apartamento</option>
+                <option value="FARM">Sítio/Chácara</option>
+                <option value="OTHER">Outro</option>
+            </select>
+            <span th:errors="*{housingType}"></span>
+        </div>
+
+        <div>
+            <label>Possui outros pets?</label>
+            <input id="hasOtherPets" type="checkbox" th:field="*{hasOtherPets}">
+        </div>
+
+        <div>
+            <label>Motivo</label>
+            <textarea id="reason" th:field="*{reason}"></textarea>
+            <span th:errors="*{reason}"></span>
+        </div>
+
+        <button id="submit-adoption-request" type="submit">Cadastrar</button>
+    </form>
+
+    <a id="link-back-to-context-list"
+       th:if="${contextLocked}"
+       th:href="@{/pets/{petId}/adoption-requests(petId=${contextPetId})}">
+        Voltar
+    </a>
+
+    <a id="link-back-to-global-list"
+       th:if="${!contextLocked}"
+       th:href="@{/adoption-requests}">
+        Voltar
+    </a>
+</div>
+</body>
+</html>

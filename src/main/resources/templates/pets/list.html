@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pets do abrigo</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<h1 id="page-title" th:text="'Pets do abrigo: ' + ${shelter.name()}">Pets do abrigo</h1>
+
+<div th:replace="~{fragments/messages :: messages}"></div>
+
+<nav>
+    <a id="link-back-to-shelters" th:href="@{/shelters}">Voltar para abrigos</a>
+    |
+    <a id="link-create-pet" th:href="@{/shelters/{shelterId}/pets/new(shelterId=${shelter.id()})}">Cadastrar pet</a>
+</nav>
+
+<section>
+    <h2>Importar pets por CSV</h2>
+
+    <form id="pet-import-form"
+          th:action="@{/shelters/{shelterId}/pets/import(shelterId=${shelter.id()})}"
+          th:object="${petImportForm}"
+          method="post"
+          enctype="multipart/form-data">
+        <div>
+            <label for="importCsvFile">Arquivo CSV</label>
+            <input id="importCsvFile" type="file" th:field="*{csvFile}" accept=".csv,text/csv">
+            <div th:if="${#fields.hasErrors('csvFile')}" th:errors="*{csvFile}"></div>
+        </div>
+
+        <div>
+            <button id="submit-import-pets" type="submit">Importar CSV</button>
+        </div>
+    </form>
+</section>
+
+<section>
+    <h2>Exportar pets para CSV</h2>
+
+    <form id="pet-export-form"
+          th:action="@{/shelters/{shelterId}/pets/export(shelterId=${shelter.id()})}"
+          method="get">
+        <div>
+            <button id="submit-export-pets" type="submit">Exportar CSV</button>
+        </div>
+    </form>
+</section>
+
+<table id="pets-table" border="1">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Tipo</th>
+        <th>Nome</th>
+        <th>Raça</th>
+        <th>Idade</th>
+        <th>Cor</th>
+        <th>Peso</th>
+        <th>Status</th>
+        <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${#lists.isEmpty(pets)}">
+        <td colspan="9">Nenhum pet cadastrado para este abrigo.</td>
+    </tr>
+
+    <tr th:each="pet : ${pets}">
+        <td th:text="${pet.id()}">1</td>
+        <td th:text="${pet.type()}">CACHORRO</td>
+        <td th:text="${pet.name().value()}">Rex</td>
+        <td th:text="${pet.breed()}">Vira-lata</td>
+        <td th:text="${pet.age().value()}">2</td>
+        <td th:text="${pet.color()}">Caramelo</td>
+        <td th:text="${pet.weight().value()}">10.5</td>
+        <td>
+            <span th:switch="${pet.status().name()}">
+                <span th:case="'AVAILABLE'">DISPONÍVEL</span>
+                <span th:case="'ADOPTED'">ADOTADO</span>
+            </span>
+        </td>
+        <td>
+            <a th:id="'edit-pet-' + ${pet.id()}"
+               th:href="@{/pets/{id}/edit(id=${pet.id()})}">
+                Editar
+            </a>
+            |
+            <a th:id="'manage-adoptions-pet-' + ${pet.id()}"
+               th:href="@{/pets/{petId}/adoption-requests(petId=${pet.id()})}">
+                Gerenciar adoções
+            </a>
+            |
+            <form th:action="@{/pets/{id}/delete(id=${pet.id()})}"
+                  method="post"
+                  style="display:inline;">
+                <button th:id="'delete-pet-' + ${pet.id()}" type="submit">
+                    Excluir
+                </button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

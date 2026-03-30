@@ -1,0 +1,121 @@
+name: Infra Terraform
+
+on:
+  workflow_call:
+    inputs:
+      apply:
+        required: true
+        type: boolean
+      environment_name:
+        required: true
+        type: string
+    outputs:
+      alb_dns_name:
+        description: "DNS do ALB criado pelo Terraform"
+        value: ${{ jobs.terraform.outputs.alb_dns_name }}
+      ecs_cluster_name:
+        description: "Nome do cluster ECS"
+        value: ${{ jobs.terraform.outputs.ecs_cluster_name }}
+      ecs_service_name:
+        description: "Nome do service ECS"
+        value: ${{ jobs.terraform.outputs.ecs_service_name }}
+  workflow_dispatch:
+    inputs:
+      environment_name:
+        description: "Ambiente alvo"
+        required: true
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    outputs:
+      alb_dns_name: ${{ steps.alb-output.outputs.alb_dns_name }}
+      ecs_cluster_name: ${{ steps.cluster-output.outputs.ecs_cluster_name }}
+      ecs_service_name: ${{ steps.service-output.outputs.ecs_service_name }}
+
+    defaults:
+      run:
+        working-directory: infra
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar credenciais AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN }}
+          aws-region: sa-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt
+        run: terraform fmt -recursive
+
+      - name: Terraform fmt check
+        run: terraform fmt -check
+
+      - name: Terraform init
+        run: terraform init -reconfigure -backend-config="key=${{ inputs.environment_name }}/terraform.tfstate"
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: |
+          terraform plan \
+            -var="environment_name=${{ inputs.environment_name }}" \
+            -var="vpc_id=${{ secrets.AWS_VPC_ID }}" \
+            -var="public_subnet_ids=${{ secrets.AWS_PUBLIC_SUBNET_IDS }}" \
+            -var="docker_image=${{ secrets.DOCKER_IMAGE }}:latest" \
+            -var="alert_email=${{ secrets.ALERT_EMAIL }}"
+
+      - name: Terraform apply
+        if: ${{ inputs.apply || github.event_name == 'workflow_dispatch' }}
+        run: |
+          terraform apply -auto-approve \
+            -var="environment_name=${{ inputs.environment_name }}" \
+            -var="vpc_id=${{ secrets.AWS_VPC_ID }}" \
+            -var="public_subnet_ids=${{ secrets.AWS_PUBLIC_SUBNET_IDS }}" \
+            -var="docker_image=${{ secrets.DOCKER_IMAGE }}:latest" \
+            -var="alert_email=${{ secrets.ALERT_EMAIL }}"
+
+      - name: Capturar output do ALB
+        id: alb-output
+        run: |
+          ALB_DNS=$(terraform output -raw alb_dns_name)
+          echo "alb_dns_name=$ALB_DNS" >> "$GITHUB_OUTPUT"
+
+      - name: Capturar output do cluster ECS
+        id: cluster-output
+        run: |
+          ECS_CLUSTER_NAME=$(terraform output -raw ecs_cluster_name)
+          echo "ecs_cluster_name=$ECS_CLUSTER_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Capturar output do service ECS
+        id: service-output
+        run: |
+          ECS_SERVICE_NAME=$(terraform output -raw ecs_service_name)
+          echo "ecs_service_name=$ECS_SERVICE_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Resumo Terraform
+        run: |
+          {
+            echo "## Terraform Summary"
+            echo ""
+            echo "- Ambiente: ${{ inputs.environment_name }}"
+            echo "- ALB DNS: ${{ steps.alb-output.outputs.alb_dns_name }}"
+            echo "- ECS Cluster: ${{ steps.cluster-output.outputs.ecs_cluster_name }}"
+            echo "- ECS Service: ${{ steps.service-output.outputs.ecs_service_name }}"
+          } >> "$GITHUB_STEP_SUMMARY"

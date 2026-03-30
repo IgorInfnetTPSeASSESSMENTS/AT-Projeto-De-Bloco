@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <title>Solicitações de adoção</title>
+</head>
+<body>
+<div class="page-header">
+    <h1 id="page-title">Solicitações de adoção</h1>
+</div>
+
+<div class="page-content">
+    <div th:if="${successMessage}" id="success-message" class="message" th:text="${successMessage}"></div>
+
+    <div class="top">
+        <a id="link-back-to-shelter"
+           th:if="${contextLocked}"
+           th:href="@{/shelters/{shelterId}/pets(shelterId=${contextShelterId})}">
+            Voltar para abrigo
+        </a>
+
+        <a id="link-create-adoption-request-context"
+           th:if="${contextLocked}"
+           th:href="@{/pets/{petId}/adoption-requests/new(petId=${contextPetId})}">
+            Nova solicitação
+        </a>
+
+        <a id="link-create-adoption-request-global"
+           th:if="${!contextLocked}"
+           th:href="@{/adoption-requests/new}">
+            Nova solicitação
+        </a>
+    </div>
+
+    <div th:if="${contextLocked}" style="margin-bottom:20px;">
+        <strong>Contexto atual:</strong>
+        <span th:text="'Pet ID: ' + ${contextPetId}"></span>
+        <span> | </span>
+        <span th:text="'Abrigo ID: ' + ${contextShelterId}"></span>
+    </div>
+
+    <form id="filter-form-global"
+          class="filters"
+          th:if="${!contextLocked}"
+          th:action="@{/adoption-requests}"
+          method="get"
+          th:object="${filter}">
+        <input id="filter-status-global" type="text" th:field="*{status}" placeholder="Status">
+        <input id="filter-petId" type="number" th:field="*{petId}" placeholder="Pet ID">
+        <input id="filter-shelterId" type="number" th:field="*{shelterId}" placeholder="Abrigo ID">
+        <button id="submit-filter-global" type="submit">Filtrar</button>
+    </form>
+
+    <form id="filter-form-context"
+          class="filters"
+          th:if="${contextLocked}"
+          th:action="@{/pets/{petId}/adoption-requests(petId=${contextPetId})}"
+          method="get">
+        <input id="filter-status-context" type="text" name="status" th:value="${filter.status}" placeholder="Status">
+        <button id="submit-filter-context" type="submit">Filtrar por status</button>
+    </form>
+
+    <div class="simulations">
+        <span>Simular serviço externo de análise:</span>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/eligibility/SUCCESS(petId=${contextPetId})}" method="post">
+            <button id="eligibility-success" type="submit">Sucesso</button>
+        </form>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/eligibility/TIMEOUT(petId=${contextPetId})}" method="post">
+            <button id="eligibility-timeout" type="submit">Timeout</button>
+        </form>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/eligibility/NETWORK_ERROR(petId=${contextPetId})}" method="post">
+            <button id="eligibility-network-error" type="submit">Erro de rede</button>
+        </form>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/eligibility/SERVICE_UNAVAILABLE(petId=${contextPetId})}" method="post">
+            <button id="eligibility-service-unavailable" type="submit">Indisponível</button>
+        </form>
+    </div>
+
+    <div class="simulations">
+        <span>Simular serviço externo de notificação:</span>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/notification/SUCCESS(petId=${contextPetId})}" method="post">
+            <button id="notification-success" type="submit">Sucesso</button>
+        </form>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/notification/TIMEOUT(petId=${contextPetId})}" method="post">
+            <button id="notification-timeout" type="submit">Timeout</button>
+        </form>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/notification/NETWORK_ERROR(petId=${contextPetId})}" method="post">
+            <button id="notification-network-error" type="submit">Erro de rede</button>
+        </form>
+        <form th:action="@{/pets/{petId}/adoption-requests/simulation/notification/UNEXPECTED_FAILURE(petId=${contextPetId})}" method="post">
+            <button id="notification-unexpected-failure" type="submit">Falha inesperada</button>
+        </form>
+    </div>
+
+    <div style="margin-bottom:20px;">
+        <strong>Simulação da análise:</strong>
+        <span id="analysis-mode" th:text="${analysisMode}"></span>
+    </div>
+
+    <div style="margin-bottom:20px;">
+        <strong>Simulação da notificação:</strong>
+        <span id="notification-mode" th:text="${notificationMode}"></span>
+    </div>
+
+    <table id="adoption-requests-table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Pet</th>
+            <th>Abrigo</th>
+            <th>Solicitante</th>
+            <th>Status</th>
+            <th>Análise</th>
+            <th>Ações</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="request : ${requests}">
+            <td th:text="${request.id()}"></td>
+            <td th:text="${request.petId()}"></td>
+            <td th:text="${request.shelterId()}"></td>
+            <td th:text="${request.applicantName().value()}"></td>
+            <td>
+                <span th:switch="${request.status().name()}">
+                    <span th:case="'PENDING'">PENDENTE</span>
+                    <span th:case="'UNDER_REVIEW'">EM ANÁLISE</span>
+                    <span th:case="'APPROVED'">APROVADA</span>
+                    <span th:case="'REJECTED'">REJEITADA</span>
+                    <span th:case="'CANCELLED'">CANCELADA</span>
+                </span>
+            </td>
+            <td>
+                <span th:switch="${request.eligibilityAnalysis().name()}">
+                    <span th:case="'ELIGIBLE'">ELEGÍVEL</span>
+                    <span th:case="'NOT_ELIGIBLE'">NÃO ELEGÍVEL</span>
+                    <span th:case="'REQUIRES_MANUAL_REVIEW'">REQUER ANÁLISE MANUAL</span>
+                    <span th:case="'UNAVAILABLE'">INDISPONÍVEL</span>
+                    <span th:case="'NOT_REQUESTED'">NÃO SOLICITADA</span>
+                </span>
+            </td>
+            <td class="actions">
+                <a th:id="'details-adoption-request-' + ${request.id()}" th:href="@{/adoption-requests/{id}(id=${request.id()})}">Detalhes</a>
+                <a th:id="'edit-adoption-request-' + ${request.id()}" th:href="@{/adoption-requests/{id}/edit(id=${request.id()})}">Editar</a>
+                <form th:action="@{/adoption-requests/{id}/approve(id=${request.id()})}" method="post">
+                    <button th:id="'approve-adoption-request-' + ${request.id()}" type="submit">Aprovar</button>
+                </form>
+                <form th:action="@{/adoption-requests/{id}/reject(id=${request.id()})}" method="post">
+                    <button th:id="'reject-adoption-request-' + ${request.id()}" type="submit">Rejeitar</button>
+                </form>
+                <form th:action="@{/adoption-requests/{id}/cancel(id=${request.id()})}" method="post">
+                    <button th:id="'cancel-adoption-request-' + ${request.id()}" type="submit">Cancelar</button>
+                </form>
+                <form th:action="@{/adoption-requests/{id}/delete(id=${request.id()})}" method="post" style="display:inline">
+                    <button th:id="'delete-adoption-request-' + ${request.id()}"
+                            type="submit"
+                            onclick="return confirm('Tem certeza que deseja remover esta solicitação?')">
+                        Remover
+                    </button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>

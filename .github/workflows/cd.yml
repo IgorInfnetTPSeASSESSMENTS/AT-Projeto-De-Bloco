@@ -1,0 +1,313 @@
+name: CD
+
+on:
+  push:
+    branches: ["main", "develop", "test"]
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: sa-east-1
+
+jobs:
+  build-test:
+    name: Build, tests and coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Configurar Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+
+      - name: Build + testes + cobertura + checkstyle
+        run: mvn clean verify jacoco:report -Dheadless=true -DskipITs=true
+
+      - name: Upload relatórios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-reports
+          path: |
+            target/surefire-reports
+            target/failsafe-reports
+            target/site/jacoco
+
+      - name: Resumo build
+        if: always()
+        run: |
+          {
+            echo "## Build Summary"
+            echo ""
+            echo "- Maven verify executado com Checkstyle"
+            echo "- Cobertura JaCoCo gerada"
+            echo "- Artifact: \`build-reports\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  docker-dev:
+    name: Build and push Docker image dev
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+    environment: dev
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login no Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Definir tag da imagem
+        id: meta
+        run: echo "image_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build da imagem Docker
+        run: |
+          docker build \
+            -t "${{ secrets.DOCKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}" \
+            -t "${{ secrets.DOCKER_IMAGE }}:latest" \
+            .
+
+      - name: Push da imagem Docker
+        run: |
+          docker push "${{ secrets.DOCKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}"
+          docker push "${{ secrets.DOCKER_IMAGE }}:latest"
+
+      - name: Resumo Docker
+        run: |
+          {
+            echo "## Docker Summary"
+            echo ""
+            echo "- Environment: \`dev\`"
+            echo "- Imagem buildada"
+            echo "- Imagem publicada no ECR"
+            echo "- Tag versionada: \`${{ steps.meta.outputs.image_tag }}\`"
+            echo "- Tag latest: \`latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  docker-test:
+    name: Build and push Docker image test
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/test'
+    environment: test
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login no Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Definir tag da imagem
+        id: meta
+        run: echo "image_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build da imagem Docker
+        run: |
+          docker build \
+            -t "${{ secrets.DOCKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}" \
+            -t "${{ secrets.DOCKER_IMAGE }}:latest" \
+            .
+
+      - name: Push da imagem Docker
+        run: |
+          docker push "${{ secrets.DOCKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}"
+          docker push "${{ secrets.DOCKER_IMAGE }}:latest"
+
+      - name: Resumo Docker
+        run: |
+          {
+            echo "## Docker Summary"
+            echo ""
+            echo "- Environment: \`test\`"
+            echo "- Imagem buildada"
+            echo "- Imagem publicada no ECR"
+            echo "- Tag versionada: \`${{ steps.meta.outputs.image_tag }}\`"
+            echo "- Tag latest: \`latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  docker-prod:
+    name: Build and push Docker image prod
+    needs: build-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    environment: prod
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login no Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Definir tag da imagem
+        id: meta
+        run: echo "image_tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Build da imagem Docker
+        run: |
+          docker build \
+            -t "${{ secrets.DOCKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}" \
+            -t "${{ secrets.DOCKER_IMAGE }}:latest" \
+            .
+
+      - name: Push da imagem Docker
+        run: |
+          docker push "${{ secrets.DOCKER_IMAGE }}:${{ steps.meta.outputs.image_tag }}"
+          docker push "${{ secrets.DOCKER_IMAGE }}:latest"
+
+      - name: Resumo Docker
+        run: |
+          {
+            echo "## Docker Summary"
+            echo ""
+            echo "- Environment: \`prod\`"
+            echo "- Imagem buildada"
+            echo "- Imagem publicada no ECR"
+            echo "- Tag versionada: \`${{ steps.meta.outputs.image_tag }}\`"
+            echo "- Tag latest: \`latest\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  infra-dev:
+    name: Terraform apply dev
+    needs: docker-dev
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/infra_terraform.yml
+    with:
+      apply: true
+      environment_name: dev
+    secrets: inherit
+
+  deploy-dev:
+    name: Deploy ECS dev
+    needs: [ docker-dev, infra-dev ]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/deploy_ecs.yml
+    with:
+      image_tag: ${{ needs.docker-dev.outputs.image_tag }}
+      environment_name: dev
+      alb_dns_name: ${{ needs.infra-dev.outputs.alb_dns_name }}
+      ecs_cluster_name: ${{ needs.infra-dev.outputs.ecs_cluster_name }}
+      ecs_service_name: ${{ needs.infra-dev.outputs.ecs_service_name }}
+    secrets: inherit
+
+  smoke-dev:
+    name: Post-deploy smoke dev
+    needs: [ deploy-dev, infra-dev ]
+    if: github.ref == 'refs/heads/develop'
+    uses: ./.github/workflows/post_deploy_selenium.yml
+    with:
+      environment_name: dev
+      alb_dns_name: ${{ needs.infra-dev.outputs.alb_dns_name }}
+    secrets: inherit
+
+  infra-test:
+    name: Terraform apply test
+    needs: docker-test
+    if: github.ref == 'refs/heads/test'
+    uses: ./.github/workflows/infra_terraform.yml
+    with:
+      apply: true
+      environment_name: test
+    secrets: inherit
+
+  deploy-test:
+    name: Deploy ECS test
+    needs: [ docker-test, infra-test ]
+    if: github.ref == 'refs/heads/test'
+    uses: ./.github/workflows/deploy_ecs.yml
+    with:
+      image_tag: ${{ needs.docker-test.outputs.image_tag }}
+      environment_name: test
+      alb_dns_name: ${{ needs.infra-test.outputs.alb_dns_name }}
+      ecs_cluster_name: ${{ needs.infra-test.outputs.ecs_cluster_name }}
+      ecs_service_name: ${{ needs.infra-test.outputs.ecs_service_name }}
+    secrets: inherit
+
+  smoke-test:
+    name: Post-deploy smoke test
+    needs: [ deploy-test, infra-test ]
+    if: github.ref == 'refs/heads/test'
+    uses: ./.github/workflows/post_deploy_selenium.yml
+    with:
+      environment_name: test
+      alb_dns_name: ${{ needs.infra-test.outputs.alb_dns_name }}
+    secrets: inherit
+
+  load-test:
+    name: Load test test
+    needs: [ smoke-test, infra-test ]
+    if: github.ref == 'refs/heads/test'
+    uses: ./.github/workflows/load_test_locust.yml
+    with:
+      environment_name: test
+      alb_dns_name: ${{ needs.infra-test.outputs.alb_dns_name }}
+
+  infra-prod:
+    name: Terraform apply prod
+    needs: docker-prod
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/infra_terraform.yml
+    with:
+      apply: true
+      environment_name: prod
+    secrets: inherit
+
+  deploy-prod:
+    name: Deploy ECS prod
+    needs: [ docker-prod, infra-prod ]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/deploy_ecs.yml
+    with:
+      image_tag: ${{ needs.docker-prod.outputs.image_tag }}
+      environment_name: prod
+      alb_dns_name: ${{ needs.infra-prod.outputs.alb_dns_name }}
+      ecs_cluster_name: ${{ needs.infra-prod.outputs.ecs_cluster_name }}
+      ecs_service_name: ${{ needs.infra-prod.outputs.ecs_service_name }}
+    secrets: inherit
+
+  smoke-prod:
+    name: Post-deploy smoke prod
+    needs: [ deploy-prod, infra-prod ]
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/post_deploy_selenium.yml
+    with:
+      environment_name: prod
+      alb_dns_name: ${{ needs.infra-prod.outputs.alb_dns_name }}
+    secrets: inherit

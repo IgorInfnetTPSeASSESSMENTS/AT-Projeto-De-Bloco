@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abrigos</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<h1 id="page-title">Abrigos</h1>
+
+<div th:replace="~{fragments/messages :: messages}"></div>
+
+<nav>
+    <a id="link-home" th:href="@{/}">Home</a>
+    |
+    <a id="link-create-shelter" th:href="@{/shelters/new}">Cadastrar abrigo</a>
+</nav>
+
+<table id="shelters-table" border="1">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Nome</th>
+        <th>Telefone</th>
+        <th>Email</th>
+        <th>Ações</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:if="${#lists.isEmpty(shelters)}">
+        <td colspan="5">Nenhum abrigo cadastrado.</td>
+    </tr>
+
+    <tr th:each="shelter : ${shelters}">
+        <td th:text="${shelter.id()}">1</td>
+        <td th:text="${shelter.name()}">Abrigo</td>
+        <td th:text="${shelter.phoneNumber().value()}">31999999999</td>
+        <td th:text="${shelter.email().value()}">abrigo@email.com</td>
+        <td>
+            <a th:id="'edit-shelter-' + ${shelter.id()}"
+               th:href="@{/shelters/{id}/edit(id=${shelter.id()})}">
+                Editar
+            </a>
+            |
+            <a th:id="'view-pets-' + ${shelter.id()}"
+               th:href="@{/shelters/{shelterId}/pets(shelterId=${shelter.id()})}">
+                Ver pets
+            </a>
+            |
+            <form th:action="@{/shelters/{id}/delete(id=${shelter.id()})}"
+                  method="post"
+                  style="display:inline;">
+                <button th:id="'delete-shelter-' + ${shelter.id()}" type="submit">
+                    Excluir
+                </button>
+            </form>
+        </td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>

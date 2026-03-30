@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+    <title>Erro</title>
+</head>
+<body>
+<div class="page-header">
+    <h1>Erro</h1>
+</div>
+
+<div class="page-content">
+    <p th:text="${errorMessage}">Erro inesperado.</p>
+
+    <a href="javascript:history.back()" id="link-back">
+        Voltar
+    </a>
+</div>
+</body>
+</html>

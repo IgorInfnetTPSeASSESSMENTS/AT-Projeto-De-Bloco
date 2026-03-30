@@ -1,0 +1,547 @@
+:root {
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --surface-soft: #f8fafc;
+    --border: #d9e2ec;
+    --text: #102a43;
+    --muted: #627d98;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --danger: #dc2626;
+    --danger-hover: #b91c1c;
+    --warning: #d97706;
+    --warning-hover: #b45309;
+    --success: #16a34a;
+    --success-bg: #dcfce7;
+    --error: #b91c1c;
+    --error-bg: #fee2e2;
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    --radius: 16px;
+    --radius-sm: 10px;
+    --max-width: 1100px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    margin: 0;
+    padding: 24px;
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 28%),
+            linear-gradient(180deg, #f8fbff 0%, var(--bg) 100%);
+    color: var(--text);
+    line-height: 1.5;
+}
+
+body > * {
+    max-width: var(--max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.page-header,
+.page-content {
+    width: 100%;
+    max-width: var(--max-width);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.form-page-header,
+.form-page-content {
+    max-width: 820px;
+}
+
+.page-header {
+    margin-bottom: 20px;
+}
+
+.page-content > *:first-child {
+    margin-top: 0;
+}
+
+.page-content {
+    display: block;
+}
+
+h1, h2 {
+    margin-top: 0;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+h1 {
+    margin-bottom: 20px;
+    font-size: clamp(1.8rem, 2.5vw, 2.5rem);
+}
+
+h2 {
+    margin-bottom: 14px;
+    font-size: clamp(1.1rem, 2vw, 1.4rem);
+}
+
+p {
+    margin: 0 0 14px;
+    color: var(--text);
+}
+
+nav,
+.top,
+.filters,
+.simulations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 18px;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+form {
+    margin: 0;
+}
+
+form#adoption-request-form,
+form#pet-form,
+form#shelter-form {
+    display: block;
+    width: 100%;
+    max-width: 820px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 22px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+form#adoption-request-form > div,
+form#pet-form > div,
+form#shelter-form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+#pet-import-form,
+#pet-export-form {
+    padding: 0;
+    margin-bottom: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+#pet-import-form > div,
+#pet-export-form > div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+#pet-import-form > div:last-child,
+#pet-export-form > div:last-child {
+    margin-bottom: 0;
+}
+
+label {
+    font-weight: 700;
+    color: var(--text);
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+select,
+textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+    color: var(--text);
+    font-size: 0.98rem;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .02s ease;
+}
+
+textarea {
+    min-height: 130px;
+    resize: vertical;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: rgba(37, 99, 235, 0.7);
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+button {
+    min-height: 42px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background .2s ease, transform .05s ease, opacity .2s ease;
+}
+
+button:hover {
+    background: var(--primary-hover);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+#delete-shelter-1,
+[id^="delete-shelter-"],
+[id^="delete-pet-"],
+[id^="delete-adoption-request-"] {
+    background: var(--danger);
+}
+
+#delete-shelter-1:hover,
+[id^="delete-shelter-"]:hover,
+[id^="delete-pet-"]:hover,
+[id^="delete-adoption-request-"]:hover {
+    background: var(--danger-hover);
+}
+
+[id^="reject-adoption-request-"],
+[id^="cancel-adoption-request-"] {
+    background: var(--warning);
+}
+
+[id^="reject-adoption-request-"]:hover,
+[id^="cancel-adoption-request-"]:hover {
+    background: var(--warning-hover);
+}
+
+[id^="approve-adoption-request-"],
+#retry-analysis {
+    background: var(--success);
+}
+
+[id^="approve-adoption-request-"]:hover,
+#retry-analysis:hover {
+    background: #15803d;
+}
+
+#success-message,
+#error-message {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    border: 1px solid transparent;
+    box-shadow: var(--shadow);
+}
+
+#success-message {
+    background: var(--success-bg);
+    border-color: #86efac;
+    color: #166534;
+}
+
+#error-message {
+    background: var(--error-bg);
+    border-color: #fca5a5;
+    color: var(--error);
+}
+
+#success-message p,
+#error-message p {
+    margin: 0;
+    font-weight: 600;
+}
+
+form div > span:last-child,
+form div > div:last-child {
+    color: var(--error);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+span:empty,
+div:empty {
+    min-height: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 24px;
+}
+
+thead {
+    background: #eaf2ff;
+}
+
+th,
+td {
+    padding: 14px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+}
+
+th {
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+td {
+    color: var(--text);
+    font-size: 0.95rem;
+}
+
+tbody tr:hover {
+    background: rgba(37, 99, 235, 0.04);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.actions form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.actions a {
+    display: inline-flex;
+    align-items: center;
+    min-height: auto;
+    padding: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.actions button {
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    line-height: 1.2;
+}
+
+section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 22px;
+}
+
+#shelters-table td form button,
+#pets-table td form button,
+#adoption-requests-table td form button {
+    min-height: 28px;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    line-height: 1.2;
+    width: auto;
+}
+
+#shelters-table td form,
+#pets-table td form,
+#adoption-requests-table td form {
+    display: inline-flex;
+    margin: 0;
+}
+
+#retry-analysis {
+    margin-bottom: 12px;
+}
+
+form:has(#retry-analysis) {
+    margin-bottom: 16px;
+}
+
+#analysis-mode,
+#notification-mode,
+#petId-display,
+#shelterId-display,
+#request-id,
+#request-petId,
+#request-shelterId,
+#request-applicantName,
+#request-applicantEmail,
+#request-applicantPhone,
+#request-applicantDocument,
+#request-housingType,
+#request-hasOtherPets,
+#request-reason,
+#request-status,
+#request-analysis,
+#request-createdAt,
+#request-updatedAt {
+    display: inline-block;
+    font-weight: 700;
+    color: var(--text);
+}
+
+body > p {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+}
+
+#link-back,
+#link-back-to-list,
+#link-back-to-shelters,
+#link-back-to-pets,
+#link-back-to-context-list,
+#link-back-to-global-list,
+#link-back-to-shelter,
+#link-home,
+#link-shelters,
+#link-create-shelter,
+#link-create-pet,
+#link-create-adoption-request-context,
+#link-create-adoption-request-global {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: #eef4ff;
+    border: 1px solid #c7d7fe;
+    color: var(--primary);
+    text-decoration: none;
+    font-weight: 700;
+}
+
+#link-back:hover,
+#link-back-to-list:hover,
+#link-back-to-shelters:hover,
+#link-back-to-pets:hover,
+#link-back-to-context-list:hover,
+#link-back-to-global-list:hover,
+#link-back-to-shelter:hover,
+#link-home:hover,
+#link-shelters:hover,
+#link-create-shelter:hover,
+#link-create-pet:hover,
+#link-create-adoption-request-context:hover,
+#link-create-adoption-request-global:hover {
+    background: #dbeafe;
+    text-decoration: none;
+}
+
+@media (max-width: 900px) {
+    body {
+        padding: 16px;
+    }
+
+    table,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+        display: block;
+    }
+
+    thead {
+        display: none;
+    }
+
+    table {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+    }
+
+    tbody tr {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        margin-bottom: 16px;
+        padding: 10px;
+    }
+
+    td {
+        border: none;
+        padding: 8px 6px;
+    }
+
+    .actions {
+        margin-top: 8px;
+    }
+
+    nav,
+    .top,
+    .filters,
+    .simulations {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    button,
+    a[id],
+    .actions form,
+    .actions button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 560px) {
+    form#adoption-request-form,
+    form#pet-form,
+    form#shelter-form,
+    #pet-import-form,
+    #pet-export-form,
+    section {
+        padding: 16px;
+    }
+
+    h1 {
+        font-size: 1.6rem;
+    }
+}

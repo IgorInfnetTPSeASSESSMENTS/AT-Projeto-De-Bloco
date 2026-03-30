@@ -1,0 +1,159 @@
+name: CD ECS
+
+on:
+  workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
+      environment_name:
+        required: true
+        type: string
+      alb_dns_name:
+        required: true
+        type: string
+      ecs_cluster_name:
+        required: true
+        type: string
+      ecs_service_name:
+        required: true
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy ECS
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+
+    steps:
+      - name: Configurar credenciais AWS via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN }}
+          aws-region: sa-east-1
+
+      - name: Instalar jq e curl
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq curl
+
+      - name: Capturar task definition atual
+        id: current-task-def
+        run: |
+          OLD_TASK_DEF=$(aws ecs describe-services \
+            --cluster "${{ inputs.ecs_cluster_name }}" \
+            --service "${{ inputs.ecs_service_name }}" \
+            --query 'services[0].taskDefinition' \
+            --output text)
+
+          echo "Task definition atual: $OLD_TASK_DEF"
+          echo "OLD_TASK_DEF=$OLD_TASK_DEF" >> "$GITHUB_ENV"
+          echo "old_task_def=$OLD_TASK_DEF" >> "$GITHUB_OUTPUT"
+
+      - name: Registrar nova task definition com a nova imagem
+        id: register-new-task-def
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition "$OLD_TASK_DEF" \
+            --query 'taskDefinition' \
+            --output json > task-def.json
+
+          NEW_IMAGE="${{ secrets.DOCKER_IMAGE }}:${{ inputs.image_tag }}"
+          echo "Nova imagem: $NEW_IMAGE"
+
+          jq --arg IMAGE "$NEW_IMAGE" '
+            .containerDefinitions[0].image = $IMAGE
+            | del(
+                .revision,
+                .status,
+                .taskDefinitionArn,
+                .requiresAttributes,
+                .compatibilities,
+                .registeredAt,
+                .registeredBy
+              )
+          ' task-def.json > new-task-def.json
+
+          NEW_TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-task-def.json \
+            --query 'taskDefinition.taskDefinitionArn' \
+            --output text)
+
+          echo "Nova task definition registrada: $NEW_TASK_DEF_ARN"
+          echo "NEW_TASK_DEF_ARN=$NEW_TASK_DEF_ARN" >> "$GITHUB_ENV"
+          echo "new_task_def=$NEW_TASK_DEF_ARN" >> "$GITHUB_OUTPUT"
+
+      - name: Atualizar serviço ECS
+        run: |
+          aws ecs update-service \
+            --cluster "${{ inputs.ecs_cluster_name }}" \
+            --service "${{ inputs.ecs_service_name }}" \
+            --task-definition "$NEW_TASK_DEF_ARN"
+
+      - name: Aguardar estabilização do serviço
+        run: |
+          aws ecs wait services-stable \
+            --cluster "${{ inputs.ecs_cluster_name }}" \
+            --services "${{ inputs.ecs_service_name }}"
+
+      - name: Health check da aplicação e rollback se falhar
+        run: |
+          ALB_DNS="${{ inputs.alb_dns_name }}"
+
+          if [ -z "$ALB_DNS" ] || [ "$ALB_DNS" = "None" ]; then
+            echo "Erro: ALB DNS não foi recebido pelo workflow."
+            exit 1
+          fi
+
+          APP_URL="http://${ALB_DNS}/"
+
+          echo "Health check em $APP_URL"
+
+          ATTEMPTS=10
+          SLEEP_SECONDS=10
+          SUCCESS=0
+
+          for i in $(seq 1 $ATTEMPTS); do
+            echo "Tentativa $i de $ATTEMPTS..."
+            if curl -fsS "$APP_URL" > /dev/null; then
+              echo "Aplicação saudável ✅"
+              SUCCESS=1
+              break
+            fi
+            echo "Ainda sem resposta saudável. Aguardando ${SLEEP_SECONDS}s..."
+            sleep $SLEEP_SECONDS
+          done
+
+          if [ "$SUCCESS" -ne 1 ]; then
+            echo "Health check falhou. Executando rollback..."
+
+            aws ecs update-service \
+              --cluster "${{ inputs.ecs_cluster_name }}" \
+              --service "${{ inputs.ecs_service_name }}" \
+              --task-definition "$OLD_TASK_DEF"
+
+            aws ecs wait services-stable \
+              --cluster "${{ inputs.ecs_cluster_name }}" \
+              --services "${{ inputs.ecs_service_name }}"
+
+            echo "Rollback concluído."
+            exit 1
+          fi
+
+      - name: Resumo do deploy
+        if: always()
+        run: |
+          {
+            echo "## ECS Deploy Summary"
+            echo ""
+            echo "- Environment: \`${{ inputs.environment_name }}\`"
+            echo "- Cluster: \`${{ inputs.ecs_cluster_name }}\`"
+            echo "- Service: \`${{ inputs.ecs_service_name }}\`"
+            echo "- Image tag: \`${{ inputs.image_tag }}\`"
+            echo "- ALB DNS: \`${{ inputs.alb_dns_name }}\`"
+            echo "- Deploy e health check executados"
+          } >> "$GITHUB_STEP_SUMMARY"

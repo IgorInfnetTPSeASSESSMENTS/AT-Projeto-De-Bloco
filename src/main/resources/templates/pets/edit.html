@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar pet</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div class="page-header form-page-header">
+    <h1 id="page-title">Editar pet</h1>
+
+    <nav>
+        <a id="link-back-to-pets"
+           th:href="@{/shelters/{shelterId}/pets(shelterId=${shelterId})}">
+            Voltar para a lista de pets
+        </a>
+    </nav>
+</div>
+
+<div class="page-content form-page-content">
+    <div th:replace="~{fragments/messages :: messages}"></div>
+
+    <form id="pet-form"
+          th:action="@{/pets/{petId}(petId=${petId})}"
+          th:object="${petForm}"
+          method="post"
+          novalidate>
+
+        <div>
+            <label for="type">Tipo</label>
+            <select id="type" th:field="*{type}">
+                <option value="">Selecione</option>
+                <option value="CACHORRO">CACHORRO</option>
+                <option value="GATO">GATO</option>
+            </select>
+            <div th:if="${#fields.hasErrors('type')}" th:errors="*{type}"></div>
+        </div>
+
+        <div>
+            <label for="name">Nome</label>
+            <input id="name" type="text" th:field="*{name}">
+            <div th:if="${#fields.hasErrors('name')}" th:errors="*{name}"></div>
+        </div>
+
+        <div>
+            <label for="breed">Raça</label>
+            <input id="breed" type="text" th:field="*{breed}">
+            <div th:if="${#fields.hasErrors('breed')}" th:errors="*{breed}"></div>
+        </div>
+
+        <div>
+            <label for="age">Idade</label>
+            <input id="age" type="number" th:field="*{age}">
+            <div th:if="${#fields.hasErrors('age')}" th:errors="*{age}"></div>
+        </div>
+
+        <div>
+            <label for="color">Cor</label>
+            <input id="color" type="text" th:field="*{color}">
+            <div th:if="${#fields.hasErrors('color')}" th:errors="*{color}"></div>
+        </div>
+
+        <div>
+            <label for="weight">Peso</label>
+            <input id="weight" type="number" step="0.1" th:field="*{weight}">
+            <div th:if="${#fields.hasErrors('weight')}" th:errors="*{weight}"></div>
+        </div>
+
+        <div>
+            <button id="submit-pet" type="submit">Salvar alterações</button>
+        </div>
+    </form>
+</div>
+</body>
+</html>
